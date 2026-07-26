@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Script Hub</title>
+    <!-- EmailJS script library integration -->
+    <script type="text/javascript" src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: sans-serif; background: #0c0c0d; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
+        .box { background: #141416; padding: 30px; border-radius: 12px; width: 100%; max-width: 360px; text-align: center; box-sizing: border-box; border: 1px solid #232326; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #232326; border-radius: 6px; background: #1c1c1f; color: white; font-size: 16px; box-sizing: border-box; }
+        input:focus { border-color: #00bcd4; outline: none; }
+        button { width: 100%; padding: 12px; background: #00bcd4; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 6px; margin-top: 10px; }
+        .hidden { display: none; }
+        .error { color: #ff5252; margin-top: 12px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- SIGN UP PANEL -->
+    <div id="signup-box" class="box">
+        <h2 style="margin-top:0; color:#00bcd4;">Create Account</h2>
+        <input type="text" id="sign-name" placeholder="Full Name">
+        <input type="text" id="sign-user" placeholder="Username">
+        <input type="email" id="sign-email" placeholder="Email Address">
+        <input type="password" id="sign-pass" placeholder="Password">
+        <button onclick="signUp()">Send Verification Code</button>
+        <p style="font-size:14px; color:#888;">Have an account? <a href="#" onclick="switchBox('login-box')" style="color:#00bcd4; text-decoration:none;">Login</a></p>
+        <div id="signup-error" class="error"></div>
+    </div>
+
+    <!-- CODE VERIFICATION PANEL -->
+    <div id="verify-box" class="box hidden">
+        <h2 style="margin-top:0; color:#ffb300;">Verify Email</h2>
+        <p style="color:#888; font-size:14px;">Enter the 6-digit code sent to your email inbox.</p>
+        <input type="text" id="verify-code" placeholder="X X X X X X" maxlength="6" style="text-align:center; font-size:24px; letter-spacing:6px;">
+        <button onclick="verifyCode()">Verify & Unlock Access</button>
+        <div id="verify-error" class="error"></div>
+    </div>
+
+    <!-- LOGIN PANEL -->
+    <div id="login-box" class="box hidden">
+        <h2 style="margin-top:0; color:#00bcd4;">User Login</h2>
+        <input type="text" id="login-user" placeholder="Username">
+        <input type="password" id="login-pass" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p style="font-size:14px; color:#888;">Need an account? <a href="#" onclick="switchBox('signup-box')" style="color:#00bcd4; text-decoration:none;">Sign Up</a></p>
+        <div id="login-error" class="error"></div>
+    </div>
+
+    <!-- SCRIPT LOCK BOX -->
+    <div id="script-page" class="box hidden" style="max-width: 450px;">
+        <h2 style="margin-top:0; color:#4caf50;">🎉 Access Granted</h2>
+        <p style="color:#888; font-size:14px;">Your secure verification script is ready.</p>
+        <textarea id="scr" style="width:100%; height:130px; background:#070708; color:#00ff00; border:1px solid #232326; padding:10px; font-family:monospace; border-radius:6px; box-sizing:border-box; resize:none;" readonly>
+// YOUR SECURE ROBLOX/LUAU SCRIPT GOES HERE
+print("System successfully verified!")
+        </textarea>
+        <button onclick="copyScript()" style="background:#4caf50;">Copy Script to Clipboard</button>
+    </div>
+
+    <script>
+        // --- PASTE YOUR API KEYS FROM EMAILJS HERE ---
+        const EMAILJS_PUBLIC_KEY = "O8eNPtSU6C8_Ao4aF";
+        const EMAILJS_SERVICE_ID = "service_mmzqeom";
+        const EMAILJS_TEMPLATE_ID = "template_8bxc5nm";
+
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+
+        let generatedCode = '';
+        let temporaryUser = {};
+
+        function switchBox(id) {
+            document.querySelectorAll('.box').forEach(b => b.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function signUp() {
+            const name = document.getElementById('sign-name').value;
+            const username = document.getElementById('sign-user').value;
+            const email = document.getElementById('sign-email').value;
+            const password = document.getElementById('sign-pass').value;
+
+            if(!name || !username || !email || !password) {
+                document.getElementById('signup-error').innerText = "Please fill in all boxes!";
+                return;
+            }
+
+            // Client side verification code computation
+            generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+            temporaryUser = { name, username, email, password };
+
+            // Send standard verification format email via EmailJS engine
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                to_email: email,
+                to_name: name,
+                code: generatedCode
+            }).then(() => {
+                switchBox('verify-box');
+            }, (err) => {
+                document.getElementById('signup-error').innerText = "Failed to transmit message check config.";
+                console.error(err);
+            });
+        }
+
+        function verifyCode() {
+            const inputCode = document.getElementById('verify-code').value;
+
+            if (inputCode === generatedCode) {
+                // Save user directly inside phone browser data warehouse
+                localStorage.setItem(temporaryUser.username, JSON.stringify(temporaryUser));
+                switchBox('script-page');
+            } else {
+                document.getElementById('verify-error').innerText = "Wrong code!";
+            }
+        }
+
+        function login() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const storedData = localStorage.getItem(user);
+
+            if (storedData) {
+                const parsedUser = JSON.parse(storedData);
+                if (parsedUser.password === pass) {
+                    switchBox('script-page');
+                    return;
+                }
+            }
+            document.getElementById('login-error').innerText = "Invalid user credentials.";
+        }
+
+        function copyScript() {
+            const t = document.getElementById("scr");
+            t.select(); 
+            t.setSelectionRange(0, 99999); // Mobile tap selector stability rules
+            navigator.clipboard.writeText(t.value);
+            alert("Script copied!");
+        }
+    </script>
+</body>
+</html>
