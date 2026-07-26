@@ -78,16 +78,45 @@ print("System successfully verified!")
         }
 
         function signUp() {
-            const name = document.getElementById('sign-name').value;
-            const username = document.getElementById('sign-user').value;
-            const email = document.getElementById('sign-email').value;
-            const password = document.getElementById('sign-pass').value;
-            const btn = document.getElementById('send-btn');
+    const name = document.getElementById('sign-name').value;
+    const username = document.getElementById('sign-user').value;
+    const email = document.getElementById('sign-email').value;
+    const password = document.getElementById('sign-pass').value;
+    const btn = document.getElementById('send-btn');
 
-            if(!name || !username || !email || !password) {
-                document.getElementById('signup-error').innerText = "Please fill in all boxes!";
-                return;
-            }
+    if(!name || !username || !email || !password) {
+        document.getElementById('signup-error').innerText = "Please fill in all boxes!";
+        return;
+    }
+
+    btn.innerText = "Sending Code...";
+    btn.disabled = true;
+    document.getElementById('signup-error').innerText = "";
+
+    generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+    temporaryUser = { name, username, email, password };
+
+    const templateParams = {
+        to_name: name,
+        to_email: email,
+        code: generatedCode
+    };
+
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+        .then(() => {
+            btn.innerText = "Send Verification Code";
+            btn.disabled = false;
+            switchBox('verify-box');
+        })
+        .catch((err) => {
+            btn.innerText = "Send Verification Code";
+            btn.disabled = false;
+            // FIXED: This will output the EXACT raw error message onto your phone screen
+            document.getElementById('signup-error').innerText = "EmailJS Error: " + (err.text || JSON.stringify(err));
+            console.error("System Error details:", err);
+        });
+}
+
 
             // Mobile button feedback state
             btn.innerText = "Sending Code...";
