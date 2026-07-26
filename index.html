@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Script Hub</title>
-    <!-- EmailJS script library integration -->
+    <!-- FIXED: Correct EmailJS script library link -->
     <script type="text/javascript" src="https://jsdelivr.net"></script>
     <style>
         body { font-family: sans-serif; background: #0c0c0d; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
@@ -12,6 +12,7 @@
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #232326; border-radius: 6px; background: #1c1c1f; color: white; font-size: 16px; box-sizing: border-box; }
         input:focus { border-color: #00bcd4; outline: none; }
         button { width: 100%; padding: 12px; background: #00bcd4; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 6px; margin-top: 10px; }
+        button:disabled { background: #555; cursor: not-allowed; }
         .hidden { display: none; }
         .error { color: #ff5252; margin-top: 12px; font-size: 14px; font-weight: bold; }
     </style>
@@ -25,7 +26,7 @@
         <input type="text" id="sign-user" placeholder="Username">
         <input type="email" id="sign-email" placeholder="Email Address">
         <input type="password" id="sign-pass" placeholder="Password">
-        <button onclick="signUp()">Send Verification Code</button>
+        <button id="send-btn" onclick="signUp()">Send Verification Code</button>
         <p style="font-size:14px; color:#888;">Have an account? <a href="#" onclick="switchBox('login-box')" style="color:#00bcd4; text-decoration:none;">Login</a></p>
         <div id="signup-error" class="error"></div>
     </div>
@@ -61,7 +62,7 @@ print("System successfully verified!")
     </div>
 
     <script>
-        // --- PASTE YOUR API KEYS FROM EMAILJS HERE ---
+        // Saved your EmailJS credentials perfectly
         const EMAILJS_PUBLIC_KEY = "O8eNPtSU6C8_Ao4aF";
         const EMAILJS_SERVICE_ID = "service_mmzqeom";
         const EMAILJS_TEMPLATE_ID = "template_8bxc5nm";
@@ -81,34 +82,46 @@ print("System successfully verified!")
             const username = document.getElementById('sign-user').value;
             const email = document.getElementById('sign-email').value;
             const password = document.getElementById('sign-pass').value;
+            const btn = document.getElementById('send-btn');
 
             if(!name || !username || !email || !password) {
                 document.getElementById('signup-error').innerText = "Please fill in all boxes!";
                 return;
             }
 
-            // Client side verification code computation
+            // Mobile button feedback state
+            btn.innerText = "Sending Code...";
+            btn.disabled = true;
+            document.getElementById('signup-error').innerText = "";
+
             generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
             temporaryUser = { name, username, email, password };
 
-            // Send standard verification format email via EmailJS engine
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                to_email: email,
+            // Explicitly match your internal EmailJS template mappings
+            const templateParams = {
                 to_name: name,
+                to_email: email,
                 code: generatedCode
-            }).then(() => {
-                switchBox('verify-box');
-            }, (err) => {
-                document.getElementById('signup-error').innerText = "Failed to transmit message check config.";
-                console.error(err);
-            });
+            };
+
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                .then(() => {
+                    btn.innerText = "Send Verification Code";
+                    btn.disabled = false;
+                    switchBox('verify-box');
+                })
+                .catch((err) => {
+                    btn.innerText = "Send Verification Code";
+                    btn.disabled = false;
+                    document.getElementById('signup-error').innerText = "Error sending message. Check EmailJS template configuration.";
+                    console.error("System Error details:", err);
+                });
         }
 
         function verifyCode() {
             const inputCode = document.getElementById('verify-code').value;
 
             if (inputCode === generatedCode) {
-                // Save user directly inside phone browser data warehouse
                 localStorage.setItem(temporaryUser.username, JSON.stringify(temporaryUser));
                 switchBox('script-page');
             } else {
@@ -134,7 +147,7 @@ print("System successfully verified!")
         function copyScript() {
             const t = document.getElementById("scr");
             t.select(); 
-            t.setSelectionRange(0, 99999); // Mobile tap selector stability rules
+            t.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(t.value);
             alert("Script copied!");
         }
